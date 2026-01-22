@@ -17,7 +17,7 @@ The same AI agent can be triggered via **chat, voice calls, and WhatsApp**, prov
 * 📚 **Supabase Vector Store (pgvector)** for Retrieval-Augmented Generation (RAG)
 * 📞 **Voice Calling via Vapi** for phone-based reservations and inquiries
 * 💬 **WhatsApp Messaging** for customer conversations and updates
-* 📄 **Google Docs** as a live knowledge source (menus, FAQs, policies)
+* 📄 **Google Docs** as a live knowledge source (FAQs, policies)
 * 📅 **Google Calendar** for reservations and availability management
 * 📧 **Gmail Alerts** for real-time kitchen and staff notifications
 
