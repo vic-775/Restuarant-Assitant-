@@ -99,6 +99,3 @@ This project is under active development and experimentation, focusing on agent 
 
 ---
 
-## 📄 License
-
-MIT License (or update as needed)
