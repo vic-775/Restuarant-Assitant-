@@ -5,6 +5,9 @@ Platinum Restaurant Assistant is an **agentic AI system for restaurant operation
 The same AI agent can be triggered via **chat, voice calls, and WhatsApp**, providing a unified intelligence layer across all customer touchpoints.
 
 ---
+![Platinum Restaurant Assistant](./Resturant%20Assistant%20image.png)
+
+---
 
 ## ✨ Key Features
 
