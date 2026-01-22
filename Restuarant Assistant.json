@@ -1,0 +1,773 @@
+{
+  "name": "Restuarant Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "id": "c6d11814-5976-46bc-8e35-2651b0c2eb10",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        480,
+        384
+      ],
+      "webhookId": "90e2cdfc-df55-47a6-a830-5fc494f5d012"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        608,
+        864
+      ],
+      "id": "86b0d612-7073-4a7a-9070-bc0fd4e737f3",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "so88uDmKZzLiZFCc",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "=You are Rock, a friendly and polite receptionist at Platinum Restaurant. Your role is to interact with customers and answer their inquiries professionally and efficiently.\n\nAlways route to the rightt tool when interacting with customers\n\nOrder Handling Protocol\n\nFollow these steps in order when taking customer orders:\n\nStep 1: Menu Selection\n- Help the customer select menu items, variants, add-ons, and quantities\n- Show all available options with prices\n- Track selections internally\n- Recommend products needed by the user eg drinks or similar options if what is asjed for is missing.\n\nStep 2: Order Confirmation\n- Repeat the complete order back to the customer, including:\n  - Each item name\n  - Selected variants (with prices)\n  - Selected add-ons (with prices)\n  - Quantities\n  - Individual item prices\n  - Final total price in USD\n- Explicitly ask for confirmation: \"Does this order look correct?\"\n- Do not proceed without clear customer confirmation\n\nStep 3: Customer Information\n- Collect customer name\n- Collect customer contact information\n\nStep 4: Policy Agreement\n- Clearly inform the customer: \"Please note that once confirmed, orders cannot be changed after 5 minutes to ensure fast preparation.\"\n- Wait for customer acknowledgment** before proceeding\n\nStep 5: Order Storage. DONE LAST\nOnce all above steps are completed, prepare the order data in this JSON format for backend storage:\n\nIMPORTANT: THE DATA EXTRACT AND STORAGE IS THE LAST THING YOU DO AFTER THE CUSTOMER'S CONFIRMATION. \n\nUse this template guide to produce the json output.\n\n{\n  \"customer_name\": \"Victoria Atimango\",\n  \"customer_contact\": \"+4915123456789\",\n  \"order_items\": {\n    \"food\": {\n      \"item_name\": \"Grilled Chicken Sandwich\",\n      \"variant\": \"Large\",\n      \"price\": 8.0,\n      \"quantity\": 2,\n      \"addons\": [\n        { \"item_name\": \"Cheese\", \"price\": 1.5, \"quantity\": 1 },\n        { \"item_name\": \"Bacon\", \"price\": 2.0, \"quantity\": 1 }\n      ]\n    },\n    \"drink\": {\n      \"item_name\": \"Mango Smoothie\",\n      \"variant\": \"Medium\",\n      \"price\": 4.5,\n      \"quantity\": 1\n    }\n  },\n  \"total_amount\": 24.0,\n  \"order_status\": \"pending\"\n}\n\nCritical:Never store partial, unconfirmed, or assumed orders. All steps must be completed.\n\n\nCustomer Interaction Guidelines\n\n- Keep responses **brief, clear, and friendly**\n- Choose the appropriate tool based on the question type\n- For menu questions: Always verify schema via Records Manager before querying\n-Never guess prices, column names, or relationships\n- Present all available options and prices for any menu item\n- Format responses clearly and professionally\n- Prioritize accuracy over speed",
+          "returnIntermediateSteps": true,
+          "enableStreaming": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        752,
+        384
+      ],
+      "id": "db2885d3-c258-4407-9c93-99f9f69b590a",
+      "name": "Rock (Agent)"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "GENERAL QUESTIONS TOOL\n\nUSE FOR:\nLocation, hours, reservations questions, policies, services, amenities, restaurant background, history, reviews, events, accessibility, transportation\n\nNOT FOR:\nMenu items or prices\n\nINSTRUCTIONS:\n1. Consult RAG knowledge base first\n2. Provide accurate, complete information\n3. Be friendly and conversational\n4. Include relevant details (phone numbers, addresses, hours)\n5. If info unavailable, offer to connect guest with appropriate department",
+        "tableName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "documents"
+        },
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        608,
+        720
+      ],
+      "id": "6154ab29-265b-48b7-a1e6-ebda93c019ee",
+      "name": "General Qns",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uKERn5qwkfru9JL0",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        240
+      ],
+      "id": "4e1dff91-c441-4fbe-9720-e71f4e8d17ef",
+      "name": "Respond to Chat"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        336
+      ],
+      "id": "479f24e1-c5a1-47d1-81b7-7cadb4378035",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "embeddingBatchSize": 1,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        -224,
+        608
+      ],
+      "id": "d68b362f-a326-40cf-85f0-36d9fb1bbf95",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "uKERn5qwkfru9JL0",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $('Get Resturant Info').item.json.content }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        -96,
+        816
+      ],
+      "id": "263a66f2-5ef9-40e4-a312-a1602306bb51",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -304,
+        800
+      ],
+      "id": "184ae5f0-81f9-4f5c-ac1b-f8a8c4f74c43",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "so88uDmKZzLiZFCc",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Get Records from Record Manager (MANDATORY for menu queries)\n- Shows tables, ids and schemas. Thiss will help you generated the right query.\n- You must use this tool for any questions about the menu, including:\n  - Listing menu items\n  - Checking item variants and prices\n  - Checking available add-ons and their prices\n- Before generating any SQL query:\n- Never guess schema details, table names, or column names",
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "records_manager_columns",
+          "mode": "list",
+          "cachedResultName": "records_manager_columns"
+        },
+        "limit": 1000,
+        "options": {
+          "outputColumns": [
+            "id",
+            "document_title",
+            "schema"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        864,
+        784
+      ],
+      "id": "2ffac303-46e1-44b7-8ad9-dba3253d31fb",
+      "name": "Get Records from Record Manager",
+      "credentials": {
+        "postgres": {
+          "id": "tg8OZNmYRQhOAASM",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool whenever you need to retrieve menu information or calculate totals for items, variants, and addons. It is a helper tool for executing queries.\nCapabilities:\n1. Execute SELECT queries only data modification is not allowed. Never use INSERT, UPDATE, or DELETE\n2. Queries can join tables using their foreign key relationships. Use correct JOINs based on verified foreign keys\n3. Prices are stored in USD and should be used as provided.\n4. The tool returns query results in JSON format for further use.\n5. It ensures accurate retrieval of data based on the current database content.\n6. Always include prices for items, variants, and add-ons.\n7. Format SQL as a single line, without line breaks or escaped quotes.",
+        "operation": "executeQuery",
+        "query": "={{ $fromAI('sqlquery') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1024,
+        784
+      ],
+      "id": "a59194dd-07f1-4c33-a8cc-b3f3cb4b2e47",
+      "name": "Query Tabular Raws",
+      "credentials": {
+        "postgres": {
+          "id": "tg8OZNmYRQhOAASM",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "orders",
+          "mode": "list",
+          "cachedResultName": "orders"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "total_amount": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('total_amount', ``, 'number') }}",
+            "customer_name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('customer_name', ``, 'string') }}",
+            "customer_contact": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('customer_contact', ``, 'string') }}",
+            "order_items": "={{ $fromAI('order_items', ``, 'json') }}",
+            "order_status": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('order_status', ``, 'string') }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_contact",
+              "displayName": "customer_contact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "order_items",
+              "displayName": "order_items",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "total_amount",
+              "displayName": "total_amount",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "order_status",
+              "displayName": "order_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1200,
+        784
+      ],
+      "id": "d7cb5ba5-05bf-46d4-8114-86843fd8464d",
+      "name": "Insert rows in a table in Postgres",
+      "credentials": {
+        "postgres": {
+          "id": "tg8OZNmYRQhOAASM",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "- Use this tool to notify the Kitchen team after an order is confirmed and stored in the orders table\n- Include all relevant order details: customer name, contact, items, variants, add-ons, quantities, and total amount\n- Always ensure the order is confirmed by the customer before sending\n- Log the email action for auditing purposes\n- Keep the email clear, professional, and friendly\n\nExample Email Format:\n\nHello Kitchen Team,\n\nA new order has been placed:\n\nCustomer: Victoria Atimango\n\nContact: +4915123456789\n\nOrder Items:\n\nFood:\n  - Grilled Chicken Sandwich (Large) x2\n    Add-ons: Cheese x1, Bacon x1\n\nDrink:\n  - Mango Smoothie (Medium) x1\n\nTotal Amount: 24.0\n\nStatus: pending\n\nPlease prepare the order.\n\nThanks,\nRestaurant Agent\n",
+        "sendTo": "atimangovictoria7@gmail.com",
+        "subject": "New Order",
+        "emailType": "text",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        1376,
+        784
+      ],
+      "id": "db032d9f-46b6-4860-930b-3b9bf778b753",
+      "name": "Gmail-Notify Kitchen about Order",
+      "webhookId": "69e197ce-8c3e-447d-8f2a-3e4f69ede817",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "fbuHdlihi34Cy4lL",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "https://docs.google.com/document/d/1MiLWKtXtnwDTq6O_epkQybVBIStfAIBZZqMPwzhAeNQ/edit?tab=t.0"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        336
+      ],
+      "id": "8a890dbd-9fa4-4b22-8c2e-6db6bbc986d1",
+      "name": "Get Resturant Info",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "XCyDj4vykmFizHOj",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "deleteTable",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        16,
+        336
+      ],
+      "id": "214cf569-7dca-41fd-bd41-7477612d7905",
+      "name": "Delete previous records",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "tg8OZNmYRQhOAASM",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "atimangovictoria775@gmail.com",
+          "mode": "list",
+          "cachedResultName": "atimangovictoria775@gmail.com"
+        },
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('After', ``, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Before', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        1552,
+        800
+      ],
+      "id": "a29f8d5f-1686-4c1e-bea8-faa272021b11",
+      "name": "Get many events in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "02tJ1zDnR7j87zRH",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "atimangovictoria775@gmail.com",
+          "mode": "list",
+          "cachedResultName": "atimangovictoria775@gmail.com"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        1712,
+        800
+      ],
+      "id": "6b4e96de-6913-446e-8eba-1b39c90d0c84",
+      "name": "Create an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "02tJ1zDnR7j87zRH",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        848
+      ],
+      "id": "0a2fd7b9-f2bd-4348-976d-81d1177e72ef",
+      "name": "Memory"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        272,
+        848
+      ],
+      "id": "0af899e8-3dbe-49b2-a768-d0725f0913c3",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "so88uDmKZzLiZFCc",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "intermediateSteps",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        416
+      ],
+      "id": "e063aa54-c407-4236-a214-01db0002ab6c",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO session_logs(session_id, logs)\nVALUES (\n  '{{ $('When chat message received').item.json.sessionId || $json.sessionId }}',\n  jsonb_build_array(\n    jsonb_build_object(\n      'timestamp', '{{ $moment().toISOString() }}',\n      'user_input', '{{ ($('When chat message received').item.json.chatInput || $json.chatInput).replace(/'/g, \"''\") }}',\n      'agent_response', '{{ ($('Rock (Agent)').item.json.output || $json.output).replace(/'/g, \"''\") }}',\n      'action', '{{ ($json.action || \"\").replace(/'/g, \"''\") }}'\n    )\n  )\n)\nON CONFLICT (session_id)\nDO UPDATE\nSET logs = session_logs.logs || EXCLUDED.logs;\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1328,
+        416
+      ],
+      "id": "2b408102-57bb-4721-8ea9-7668412a737b",
+      "name": "SessionLogs",
+      "credentials": {
+        "postgres": {
+          "id": "tg8OZNmYRQhOAASM",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Rock (Agent)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "General Qns",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "General Qns": {
+      "ai_tool": [
+        [
+          {
+            "node": "Rock (Agent)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rock (Agent)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Chat",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get Resturant Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Records from Record Manager": {
+      "ai_tool": [
+        [
+          {
+            "node": "Rock (Agent)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Tabular Raws": {
+      "ai_tool": [
+        [
+          {
+            "node": "Rock (Agent)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert rows in a table in Postgres": {
+      "ai_tool": [
+        [
+          {
+            "node": "Rock (Agent)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail-Notify Kitchen about Order": {
+      "ai_tool": [
+        [
+          {
+            "node": "Rock (Agent)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Resturant Info": {
+      "main": [
+        [
+          {
+            "node": "Delete previous records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete previous records": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "Rock (Agent)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "Rock (Agent)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Rock (Agent)",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Rock (Agent)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "SessionLogs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "669daa4e-e06a-4f0a-ada2-1f1439fe47ed",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "486370d2f678fec38ecff0e72a224acd762602436a881f1c63640ca3680c828a"
+  },
+  "id": "TKdz6L3SB8tBk53_0YXgz",
+  "tags": []
+}
